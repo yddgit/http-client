@@ -1,8 +1,10 @@
 package com.my.project.http.client.util;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.core.json.JsonWriteFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -22,13 +24,14 @@ public class JsonUtils {
         mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
         // to allow (non-standard) unquoted field names in JSON:
         mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-        mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
         // to allow use of apostrophes (single quotes), non standard
         mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-        mapper.configure(JsonParser.Feature.ALLOW_TRAILING_COMMA, true);
-        mapper.configure(JsonParser.Feature.ALLOW_MISSING_VALUES, true);
-        // to force escaping of non-ASCII characters:
-        mapper.configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true);
+        DeserializationConfig deserializationConfig = mapper.getDeserializationConfig();
+        mapper.setConfig(deserializationConfig
+            .with(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS)
+            .with(JsonReadFeature.ALLOW_TRAILING_COMMA)
+            .with(JsonReadFeature.ALLOW_MISSING_VALUES)
+            .with(JsonWriteFeature.ESCAPE_NON_ASCII));
     }
 
     public static String toJsonString(Object o) {
@@ -55,8 +58,7 @@ public class JsonUtils {
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    public static <T> T jsonToObject(String json, TypeReference valueTypeRef) {
+    public static <T> T jsonToObject(String json, TypeReference<T> valueTypeRef) {
         try {
             return mapper.readValue(json, valueTypeRef);
         } catch (Exception e) {
